@@ -34,29 +34,28 @@ export default function LandingPage() {
           left,
           fontSize,
           speed,
-          frozen: false,
-          timestamp: Date.now()
+          frozen: false
         }
-      ]);
+      ].slice(-150));
     }, 150);
 
     const fallInterval = setInterval(() => {
-      const now = Date.now();
-      setWords((prevWords) => {
-        return prevWords
-          .map((w) => {
-            if (hoveredWords.current.has(w.id)) {
-              return { ...w, frozen: true };
-            } else if (w.frozen) {
-              return { ...w, frozen: false };
-            }
+      setWords((prevWords) =>
+        prevWords.map((w) => {
+          if (hoveredWords.current.has(w.id)) {
+            return { ...w, frozen: true };
+          } else if (w.frozen) {
+            return { ...w, frozen: false };
+          }
 
-            if (now - w.timestamp > 15000 || w.top > window.innerHeight) return null;
+          const nextTop = w.top + w.speed;
+          if (nextTop > window.innerHeight) {
+            return null;
+          }
 
-            return { ...w, top: w.top + w.speed };
-          })
-          .filter(Boolean);
-      });
+          return { ...w, top: nextTop };
+        }).filter(Boolean)
+      );
     }, 30);
 
     return () => {
