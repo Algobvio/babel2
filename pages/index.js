@@ -37,7 +37,7 @@ export default function LandingPage() {
           frozen: false,
           timestamp: Date.now()
         }
-      ].slice(-100));
+      ]);
     }, 150);
 
     const fallInterval = setInterval(() => {
@@ -51,7 +51,7 @@ export default function LandingPage() {
               return { ...w, frozen: false };
             }
 
-            if (now - w.timestamp > 10000) return null;
+            if (now - w.timestamp > 15000 || w.top > window.innerHeight) return null;
 
             return { ...w, top: w.top + w.speed };
           })
