@@ -14,14 +14,10 @@ export default function LandingPage() {
   ];
 
   const [words, setWords] = useState([]);
-  const [columns, setColumns] = useState([]);
   const hoveredWords = useRef(new Set());
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    const colCount = Math.floor(window.innerWidth / 20);
-    setColumns(new Array(colCount).fill(0));
 
     const spawnInterval = setInterval(() => {
       const id = Date.now() + Math.random();
@@ -39,10 +35,9 @@ export default function LandingPage() {
           fontSize,
           speed,
           frozen: false,
-          fallingOut: false,
           timestamp: Date.now()
         }
-      ].slice(-200));
+      ].slice(-100));
     }, 150);
 
     const fallInterval = setInterval(() => {
@@ -56,28 +51,9 @@ export default function LandingPage() {
               return { ...w, frozen: false };
             }
 
-            if (now - w.timestamp > 15000) return null;
+            if (now - w.timestamp > 10000) return null;
 
-            if (w.fallingOut) {
-              return { ...w, top: w.top + 4 };
-            }
-
-            const nextTop = w.top + w.speed;
-            const col = Math.floor(w.left / 20);
-            const maxTop = window.innerHeight - (columns[col] || 0) - 20;
-
-            if (nextTop >= maxTop) {
-              if (Math.random() < 0.3) {
-                return { ...w, fallingOut: true };
-              } else {
-                const updatedCols = [...columns];
-                updatedCols[col] += 20;
-                setColumns(updatedCols);
-                return { ...w, top: maxTop, frozen: true, timestamp: now };
-              }
-            }
-
-            return { ...w, top: nextTop };
+            return { ...w, top: w.top + w.speed };
           })
           .filter(Boolean);
       });
@@ -87,7 +63,7 @@ export default function LandingPage() {
       clearInterval(spawnInterval);
       clearInterval(fallInterval);
     };
-  }, [columns.length]);
+  }, []);
 
   const handleMouseEnter = (id) => hoveredWords.current.add(id);
   const handleMouseLeave = (id) => hoveredWords.current.delete(id);
