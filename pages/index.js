@@ -13,8 +13,7 @@ export default function LandingPage() {
     "文字", "詩歌", "身体", "回忆", "夜晚"
   ];
 
-  const [fallingWords, setFallingWords] = useState([]);
-  const [frozenWords, setFrozenWords] = useState([]);
+  const [words, setWords] = useState([]);
   const [columns, setColumns] = useState([]);
   const hoveredWords = useRef(new Set());
 
@@ -22,61 +21,65 @@ export default function LandingPage() {
     if (typeof window === "undefined") return;
 
     const colCount = Math.floor(window.innerWidth / 20);
-    const initialColumns = new Array(colCount).fill(0);
-    setColumns(initialColumns);
+    setColumns(new Array(colCount).fill(0));
 
     const spawnInterval = setInterval(() => {
-      const word = phrases[Math.floor(Math.random() * phrases.length)];
       const id = Date.now() + Math.random();
+      const word = phrases[Math.floor(Math.random() * phrases.length)];
       const left = Math.floor(Math.random() * window.innerWidth);
       const fontSize = Math.floor(Math.random() * 10 + 14);
       const speed = Math.random() * 1 + 0.5;
-      setFallingWords((prev) => [...prev, { id, word, top: 0, left, fontSize, speed, frozen: false, fallingOut: false, timestamp: Date.now() }]);
+      setWords((prev) => [
+        ...prev,
+        {
+          id,
+          word,
+          top: 0,
+          left,
+          fontSize,
+          speed,
+          frozen: false,
+          fallingOut: false,
+          timestamp: Date.now()
+        }
+      ].slice(-200));
     }, 150);
 
     const fallInterval = setInterval(() => {
       const now = Date.now();
-
-      setFallingWords((prevWords) => {
-        let updated = prevWords.map((w) => {
-          if (hoveredWords.current.has(w.id)) return { ...w, frozen: true };
-
-          if (w.frozen && !hoveredWords.current.has(w.id)) {
-            return { ...w, frozen: false };
-          }
-
-          if (w.fallingOut) {
-            return { ...w, top: w.top + 4 };
-          }
-
-          const nextTop = w.top + w.speed;
-          const col = Math.floor(w.left / 20);
-          const maxTop = window.innerHeight - (columns[col] || 0) - 20;
-
-          if (nextTop >= maxTop) {
-            const shouldFallOut = Math.random() < 0.3; // 30% chance to fall out
-            if (shouldFallOut) {
-              return { ...w, fallingOut: true };
+      setWords((prevWords) => {
+        return prevWords
+          .map((w) => {
+            if (hoveredWords.current.has(w.id)) {
+              return { ...w, frozen: true };
+            } else if (w.frozen) {
+              return { ...w, frozen: false };
             }
 
-            const updatedWord = { ...w, top: maxTop, frozen: true, timestamp: now };
-            setFrozenWords((prev) => {
-              const combined = [...prev, updatedWord];
-              const filtered = combined.filter((fw) => now - fw.timestamp < 15000); // keep only last 15s
-              return filtered.slice(-300); // max 300 frozen
-            });
+            if (now - w.timestamp > 15000) return null;
 
-            const updatedCols = [...columns];
-            updatedCols[col] += 20;
-            setColumns(updatedCols);
-            return updatedWord;
-          }
+            if (w.fallingOut) {
+              return { ...w, top: w.top + 4 };
+            }
 
-          return { ...w, top: nextTop };
-        });
+            const nextTop = w.top + w.speed;
+            const col = Math.floor(w.left / 20);
+            const maxTop = window.innerHeight - (columns[col] || 0) - 20;
 
-        // limit active falling words too
-        return updated.filter((w) => w.top < window.innerHeight + 100).slice(-500);
+            if (nextTop >= maxTop) {
+              if (Math.random() < 0.3) {
+                return { ...w, fallingOut: true };
+              } else {
+                const updatedCols = [...columns];
+                updatedCols[col] += 20;
+                setColumns(updatedCols);
+                return { ...w, top: maxTop, frozen: true, timestamp: now };
+              }
+            }
+
+            return { ...w, top: nextTop };
+          })
+          .filter(Boolean);
       });
     }, 30);
 
@@ -86,17 +89,12 @@ export default function LandingPage() {
     };
   }, [columns.length]);
 
-  const handleMouseEnter = (id) => {
-    hoveredWords.current.add(id);
-  };
-
-  const handleMouseLeave = (id) => {
-    hoveredWords.current.delete(id);
-  };
+  const handleMouseEnter = (id) => hoveredWords.current.add(id);
+  const handleMouseLeave = (id) => hoveredWords.current.delete(id);
 
   return (
     <div className="min-h-screen bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')] bg-[#F9F9F7] text-[#1C2B24] dark:bg-[#1C2B24] dark:text-[#F9F8F4] flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden">
-      {[...fallingWords, ...frozenWords].map(({ id, word, top, left, fontSize }) => (
+      {words.map(({ id, word, top, left, fontSize }) => (
         <span
           key={id}
           onMouseEnter={() => handleMouseEnter(id)}
