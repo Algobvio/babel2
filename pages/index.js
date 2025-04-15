@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export default function LandingPage() {
   const phrases = [
@@ -16,6 +16,7 @@ export default function LandingPage() {
   const [fallingWords, setFallingWords] = useState([]);
   const [frozenWords, setFrozenWords] = useState([]);
   const [columns, setColumns] = useState([]);
+  const hoveredWords = useRef(new Set());
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -30,19 +31,32 @@ export default function LandingPage() {
       const left = Math.floor(Math.random() * window.innerWidth);
       const fontSize = Math.floor(Math.random() * 10 + 14);
       const speed = Math.random() * 1 + 0.5;
-      setFallingWords((prev) => [...prev, { id, word, top: 0, left, fontSize, speed, frozen: false }]);
+      setFallingWords((prev) => [...prev, { id, word, top: 0, left, fontSize, speed, frozen: false, fallingOut: false }]);
     }, 150);
 
     const fallInterval = setInterval(() => {
       setFallingWords((prevWords) => {
         return prevWords.map((w) => {
-          if (w.frozen) return w;
+          if (hoveredWords.current.has(w.id)) return { ...w, frozen: true };
+
+          if (w.frozen && !hoveredWords.current.has(w.id)) {
+            return { ...w, frozen: false };
+          }
+
+          if (w.fallingOut) {
+            return { ...w, top: w.top + 4 };
+          }
 
           const nextTop = w.top + w.speed;
           const col = Math.floor(w.left / 20);
           const maxTop = window.innerHeight - (columns[col] || 0) - 20;
 
           if (nextTop >= maxTop) {
+            const shouldFallOut = Math.random() < 0.3; // 30% chance to fall out
+            if (shouldFallOut) {
+              return { ...w, fallingOut: true };
+            }
+
             const updatedWord = { ...w, top: maxTop, frozen: true };
             setFrozenWords((prev) => [...prev, updatedWord]);
             const updatedCols = [...columns];
@@ -52,7 +66,7 @@ export default function LandingPage() {
           }
 
           return { ...w, top: nextTop };
-        });
+        }).filter(w => w.top < window.innerHeight + 100);
       });
     }, 30);
 
@@ -62,8 +76,12 @@ export default function LandingPage() {
     };
   }, [columns.length]);
 
-  const handleMouseOver = (id) => {
-    setFallingWords((prev) => prev.map((w) => (w.id === id ? { ...w, frozen: true } : w)));
+  const handleMouseEnter = (id) => {
+    hoveredWords.current.add(id);
+  };
+
+  const handleMouseLeave = (id) => {
+    hoveredWords.current.delete(id);
   };
 
   return (
@@ -71,7 +89,8 @@ export default function LandingPage() {
       {[...fallingWords, ...frozenWords].map(({ id, word, top, left, fontSize }) => (
         <span
           key={id}
-          onMouseOver={() => handleMouseOver(id)}
+          onMouseEnter={() => handleMouseEnter(id)}
+          onMouseLeave={() => handleMouseLeave(id)}
           style={{
             position: "absolute",
             top: `${top}px`,
