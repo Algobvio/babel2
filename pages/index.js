@@ -26,8 +26,7 @@ export default function LandingPage() {
       const word = phrases[Math.floor(Math.random() * phrases.length)];
       const id = Date.now() + Math.random();
       const left = Math.floor(Math.random() * window.innerWidth);
-      const fontSize = Math.floor(Math.random() * 10 + 12);
-
+      const fontSize = Math.floor(Math.random() * 8 + 14);
       setFallingWords((words) => [
         ...words,
         {
@@ -38,24 +37,25 @@ export default function LandingPage() {
           left,
           speed: Math.random() * 1 + 0.5,
           frozen: false,
-        }
+        },
       ]);
-    }, 100);
+    }, 150);
 
     const fallInterval = setInterval(() => {
       setFallingWords((words) => {
         return words.map((w) => {
           if (w.frozen) return w;
-          const nextTop = w.top + w.speed;
           const col = Math.floor(w.left / 20);
-          const limit = window.innerHeight - columnHeights[col];
+          const limit = window.innerHeight - (columnHeights[col] || 0);
+          const nextTop = w.top + w.speed;
 
           if (nextTop >= limit - 20) {
-            const newColumnHeights = [...columnHeights];
-            newColumnHeights[col] += 20;
-            setColumnHeights(newColumnHeights);
-            setFrozenWords((frozen) => [...frozen, { ...w, top: limit - 20, frozen: true }]);
-            return { ...w, top: limit - 20, frozen: true };
+            const newFrozen = { ...w, top: limit - 20, frozen: true };
+            setFrozenWords((frozen) => [...frozen, newFrozen]);
+            const updatedHeights = [...columnHeights];
+            updatedHeights[col] += 20;
+            setColumnHeights(updatedHeights);
+            return newFrozen;
           }
 
           return { ...w, top: nextTop };
@@ -67,7 +67,7 @@ export default function LandingPage() {
       clearInterval(spawnInterval);
       clearInterval(fallInterval);
     };
-  }, [phrases, columnHeights.length]);
+  }, []);
 
   const handleMouseOver = (id) => {
     setFallingWords((words) =>
@@ -76,7 +76,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')] bg-[#FAFAF6] text-[#1C2B24] flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden transition-colors duration-1000 dark:bg-[#1C2B24] dark:text-[#F9F8F4]">
+    <div className="min-h-screen bg-[url('https://www.transparenttextures.com/patterns/paper-fibers.png')] bg-[#FAFAF6] text-[#1C2B24] flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden transition-colors duration-1000">
       {[...fallingWords, ...frozenWords].map(({ id, word, top, left, fontSize }) => (
         <span
           key={id}
@@ -89,7 +89,7 @@ export default function LandingPage() {
             whiteSpace: "nowrap",
             pointerEvents: "auto",
             fontFamily: "'Special Elite', monospace",
-            zIndex: 1
+            zIndex: 1,
           }}
           className="opacity-60 transition duration-300 hover:opacity-100"
         >
@@ -98,7 +98,6 @@ export default function LandingPage() {
       ))}
 
       <h1 className="text-5xl font-bold text-center mb-4 font-serif relative z-10">Babel</h1>
-
       <p className="text-center text-base max-w-md mb-6 relative z-10">
         Subí tus poemas, escribí en colaboración y participá en concursos trimestrales sin mostrar tu nombre real. Leé desde el misterio, escribí desde el gesto.
       </p>
@@ -107,25 +106,24 @@ export default function LandingPage() {
         <input
           type="text"
           placeholder="Tu nombre (opcional)"
-          className="w-72 px-4 py-2 border border-[#1C2B24] dark:border-[#F9F8F4] rounded text-[#1C2B24] dark:text-[#F9F8F4] placeholder-[#1C2B24] dark:placeholder-[#F9F8F4] bg-transparent"
+          className="w-72 px-4 py-2 border border-[#1C2B24] rounded text-[#1C2B24] placeholder-[#1C2B24] bg-transparent"
         />
         <input
           type="email"
           placeholder="Tu email"
-          className="w-72 px-4 py-2 border border-[#1C2B24] dark:border-[#F9F8F4] rounded text-[#1C2B24] dark:text-[#F9F8F4] placeholder-[#1C2B24] dark:placeholder-[#F9F8F4] bg-transparent"
+          className="w-72 px-4 py-2 border border-[#1C2B24] rounded text-[#1C2B24] placeholder-[#1C2B24] bg-transparent"
         />
-        <button className="w-72 px-4 py-2 mt-2 rounded border-2 border-[#1C2B24] dark:border-[#F9F8F4] bg-transparent text-[#1C2B24] dark:text-[#F9F8F4] font-bold hover:bg-[#1C2B24] hover:text-[#F9F8F4] dark:hover:bg-[#F9F8F4] dark:hover:text-[#1C2B24] transition-all duration-300 animate-pulse">
+        <button className="w-72 px-4 py-2 mt-2 rounded border-2 border-[#1C2B24] bg-transparent text-[#1C2B24] font-bold hover:bg-[#1C2B24] hover:text-[#FAFAF6] transition-all duration-300 animate-pulse">
           Quiero recibir novedades
         </button>
       </div>
 
-      <div className="mt-10 text-sm text-center text-[#1C2B24] dark:text-[#F9F8F4] opacity-80 relative z-10">
+      <div className="mt-10 text-sm text-center text-[#1C2B24] opacity-80 relative z-10">
         Las palabras nos encuentran. Pronto, Babel también.
       </div>
 
       <style jsx>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Special+Elite&display=swap');
-
         .font-serif {
           font-family: 'Playfair Display', serif;
         }
