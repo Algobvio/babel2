@@ -31,12 +31,14 @@ export default function LandingPage() {
       const left = Math.floor(Math.random() * window.innerWidth);
       const fontSize = Math.floor(Math.random() * 10 + 14);
       const speed = Math.random() * 1 + 0.5;
-      setFallingWords((prev) => [...prev, { id, word, top: 0, left, fontSize, speed, frozen: false, fallingOut: false }]);
+      setFallingWords((prev) => [...prev, { id, word, top: 0, left, fontSize, speed, frozen: false, fallingOut: false, timestamp: Date.now() }]);
     }, 150);
 
     const fallInterval = setInterval(() => {
+      const now = Date.now();
+
       setFallingWords((prevWords) => {
-        return prevWords.map((w) => {
+        let updated = prevWords.map((w) => {
           if (hoveredWords.current.has(w.id)) return { ...w, frozen: true };
 
           if (w.frozen && !hoveredWords.current.has(w.id)) {
@@ -57,8 +59,13 @@ export default function LandingPage() {
               return { ...w, fallingOut: true };
             }
 
-            const updatedWord = { ...w, top: maxTop, frozen: true };
-            setFrozenWords((prev) => [...prev, updatedWord]);
+            const updatedWord = { ...w, top: maxTop, frozen: true, timestamp: now };
+            setFrozenWords((prev) => {
+              const combined = [...prev, updatedWord];
+              const filtered = combined.filter((fw) => now - fw.timestamp < 15000); // keep only last 15s
+              return filtered.slice(-300); // max 300 frozen
+            });
+
             const updatedCols = [...columns];
             updatedCols[col] += 20;
             setColumns(updatedCols);
@@ -66,7 +73,10 @@ export default function LandingPage() {
           }
 
           return { ...w, top: nextTop };
-        }).filter(w => w.top < window.innerHeight + 100);
+        });
+
+        // limit active falling words too
+        return updated.filter((w) => w.top < window.innerHeight + 100).slice(-500);
       });
     }, 30);
 
